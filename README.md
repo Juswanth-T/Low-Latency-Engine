@@ -17,12 +17,7 @@ Exchange Simulator → NIC Buffer → Ring Buffer → Price Book → Prometheus 
 
 ## Quick Start (2 Ways)
 
-### Option 1: Native Build (No Docker)
-
-**Prerequisites:**
-- CMake 3.28+
-- C++17 compiler (MSVC/GCC/Clang)
-- Git
+### Option 1: Native Build
 
 **Build & Run:**
 ```powershell
