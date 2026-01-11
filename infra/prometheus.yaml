@@ -1,0 +1,112 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 1s
+      evaluation_interval: 1s
+
+    rule_files:
+      - '/etc/prometheus/rules.yml'
+
+    scrape_configs:
+      - job_name: 'rapidfeed'
+        static_configs:
+          - targets: ['rapidfeed:8080']
+
+  rules.yml: |
+    groups:
+      - name: rapidfeed
+        rules:
+          - alert: NICBufferHigh
+            expr: rapidfeed_buffer_peak{buffer="nic",metric="util"} > 90
+            for: 2s
+            labels:
+              severity: warning
+            annotations:
+              summary: "NIC buffer peak {{ $value }}%"
+
+          - alert: RingBufferHigh
+            expr: rapidfeed_buffer_peak{buffer="ring",metric="util"} > 70
+            for: 2s
+            labels:
+              severity: warning
+            annotations:
+              summary: "Ring buffer peak {{ $value }}%"
+
+          - alert: NICOverflow
+            expr: rate(rapidfeed_drops_total{buffer="nic"}[10s]) > 0
+            for: 5s
+            labels:
+              severity: critical
+            annotations:
+              summary: "NIC buffer overflow - packets dropped"
+
+          - alert: RingOverflow
+            expr: rate(rapidfeed_drops_total{buffer="ring"}[10s]) > 0
+            for: 5s
+            labels:
+              severity: critical
+            annotations:
+              summary: "Ring buffer overflow"
+
+          - alert: HighLatency
+            expr: rapidfeed_latency_us > 200
+            for: 10s
+            labels:
+              severity: warning
+            annotations:
+              summary: "Processing latency {{ $value }}us"
+
+          - alert: Stalled
+            expr: rate(rapidfeed_packets_total[1m]) == 0
+            for: 10s
+            labels:
+              severity: critical
+            annotations:
+              summary: "Engine stalled - no packets"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      containers:
+      - name: prometheus
+        image: prom/prometheus:latest
+        ports:
+        - containerPort: 9090
+        volumeMounts:
+        - name: config
+          mountPath: /etc/prometheus
+        args:
+          - '--config.file=/etc/prometheus/prometheus.yml'
+      volumes:
+      - name: config
+        configMap:
+          name: prometheus-config
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+spec:
+  selector:
+    app: prometheus
+  ports:
+  - port: 9090
+    nodePort: 30090
+  type: NodePort

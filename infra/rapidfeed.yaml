@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rapidfeed
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rapidfeed
+  template:
+    metadata:
+      labels:
+        app: rapidfeed
+    spec:
+      containers:
+      - name: rapidfeed
+        image: rapidfeed:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+        resources:
+          limits:
+            memory: "1Gi"
+            cpu: "2000m"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rapidfeed
+spec:
+  selector:
+    app: rapidfeed
+  ports:
+  - port: 8080
+    nodePort: 30080
+  type: NodePort
