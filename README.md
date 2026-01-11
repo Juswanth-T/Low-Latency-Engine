@@ -60,7 +60,7 @@ Then access:
 
 ---
 
-### Option 2: Kubernetes (Docker + k8s)
+### Option 2: Kubernetes
 
 **Prerequisites:**
 - Docker Desktop (with Kubernetes enabled)
