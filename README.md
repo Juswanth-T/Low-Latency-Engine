@@ -19,6 +19,9 @@ Exchange Simulator → NIC Buffer → Ring Buffer → Price Book → Prometheus 
 
 ### Option 1: Native Build
 
+**Prerequisites:**
+- Docker Desktop
+
 **Build & Run:**
 ```powershell
 # Configure
@@ -36,6 +39,7 @@ cmake --build build --config Release
 [Price Book]
   BTC/USD: Bid=$95123.45 (Binance) Ask=$95120.10 (Kraken) Mid=$95121.78 Spread=$3.35
   ETH/USD: Bid=$3456.78 (Coinbase) Ask=$3455.12 (Kraken) Mid=$3455.95 Spread=$1.66
+.... [ Streaming output ]
 ```
 
 **Access Metrics:**
