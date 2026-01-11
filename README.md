@@ -45,7 +45,7 @@ cmake --build build --config Release
 **Access Metrics:**
 - **RapidFeed Metrics**: http://localhost:8080/metrics
 
-**Optional: Run Prometheus + Grafana (Docker):**
+**Run Prometheus + Grafana (Docker):**
 ```powershell
 # Run Prometheus with alerts
 docker run -d --name prometheus -p 9090:9090 `
