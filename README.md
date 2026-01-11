@@ -49,16 +49,21 @@ cmake --build build --config Release
 
 **Optional: Run Prometheus + Grafana (Docker):**
 ```powershell
-# Run Prometheus
-docker run -d -p 9090:9090 -v ${PWD}/infra/prometheus.yaml:/etc/prometheus/prometheus.yml prom/prometheus
+# Run Prometheus with alerts
+docker run -d --name prometheus -p 9090:9090 `
+  -v ${PWD}/infra/prometheus-local.yml:/etc/prometheus/prometheus.yml `
+  -v ${PWD}/infra/prometheus-rules-local.yml:/etc/prometheus/rules.yml `
+  prom/prometheus
 
 # Run Grafana
-docker run -d -p 3000:3000 -e GF_SECURITY_ADMIN_PASSWORD=admin grafana/grafana
+docker run -d --name grafana -p 3000:3000 -e GF_SECURITY_ADMIN_PASSWORD=admin grafana/grafana
 ```
 
 Then access:
-- **Prometheus**: http://localhost:9090
+- **Prometheus**: http://localhost:9090 (alerts at http://localhost:9090/alerts)
 - **Grafana**: http://localhost:3000 (admin/admin)
+
+**Note**: Prometheus will scrape metrics from your native RapidFeed running on port 8080 and evaluate all 6 alerts.
 
 ---
 
