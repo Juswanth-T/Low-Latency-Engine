@@ -1,0 +1,61 @@
+cmake_minimum_required(VERSION 3.14)
+set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
+project(RapidFeed)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+include(FetchContent)
+
+# --- 1. Fetch nlohmann/json ---
+FetchContent_Declare(
+  json
+  URL https://github.com/nlohmann/json/releases/download/v3.11.3/json.tar.xz
+  DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+)
+FetchContent_MakeAvailable(json)
+
+# --- 2. librdkafka removed (now using in-process simulator) ---
+
+# --- 4. Fetch Prometheus-cpp ---
+set(ENABLE_TESTING OFF CACHE BOOL "" FORCE)
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+set(ENABLE_PUSH OFF CACHE BOOL "" FORCE)
+set(ENABLE_PULL ON CACHE BOOL "" FORCE)
+set(ENABLE_COMPRESSION OFF CACHE BOOL "" FORCE)
+set(OVERRIDE_CXX_STANDARD_FLAGS OFF CACHE BOOL "" FORCE)
+
+FetchContent_Declare(
+  prometheus-cpp
+  GIT_REPOSITORY https://github.com/jupp0r/prometheus-cpp.git
+  GIT_TAG v1.2.4
+)
+FetchContent_MakeAvailable(prometheus-cpp)
+
+# --- 5. Define the Core Library (Logic & Data) ---
+add_library(rapid_core
+    src/core/ring_buffer.cpp
+    src/core/price_book.cpp
+    src/ingress/decoder_factory.cpp
+    src/ingress/ingress_consumer.cpp
+    src/simulator/market_simulator.cpp
+    src/metrics/prometheus_handler.cpp
+)
+
+# --- 6. Link Dependencies ---
+target_link_libraries(rapid_core
+    PUBLIC
+        nlohmann_json::nlohmann_json
+        prometheus-cpp::pull
+)
+
+# Windows-specific libraries
+if(WIN32)
+    target_link_libraries(rapid_core PUBLIC ws2_32 wsock32 iphlpapi)
+endif()
+
+target_include_directories(rapid_core PUBLIC include)
+
+# --- 7. The Main Executable ---
+add_executable(RapidFeed src/main.cpp)
+target_link_libraries(RapidFeed PUBLIC rapid_core)

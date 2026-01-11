@@ -1,0 +1,50 @@
+groups:
+  - name: rapidfeed
+    rules:
+      - alert: NICBufferHigh
+        expr: rapidfeed_buffer_peak{buffer="nic",metric="util"} > 90
+        for: 2s
+        labels:
+          severity: warning
+        annotations:
+          summary: "NIC buffer peak {{ $value }}%"
+
+      - alert: RingBufferHigh
+        expr: rapidfeed_buffer_peak{buffer="ring",metric="util"} > 70
+        for: 2s
+        labels:
+          severity: warning
+        annotations:
+          summary: "Ring buffer peak {{ $value }}%"
+
+      - alert: NICOverflow
+        expr: rate(rapidfeed_drops_total{buffer="nic"}[10s]) > 0
+        for: 5s
+        labels:
+          severity: critical
+        annotations:
+          summary: "NIC buffer overflow - packets dropped"
+
+      - alert: RingOverflow
+        expr: rate(rapidfeed_drops_total{buffer="ring"}[10s]) > 0
+        for: 5s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Ring buffer overflow"
+
+      - alert: HighLatency
+        expr: rapidfeed_latency_us > 200
+        for: 10s
+        labels:
+          severity: warning
+        annotations:
+          summary: "Processing latency {{ $value }}us"
+
+      - alert: Stalled
+        expr: rate(rapidfeed_packets_total[1m]) == 0
+        for: 10s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Engine stalled - no packets"
