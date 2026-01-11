@@ -6,7 +6,7 @@
 // 1. Simulator (Exchange): Generates synthetic market data (BTC/ETH) with random bursts.
 // 2. Ingress :Moves raw packets from the NIC Buffer to the Lock-Free Ring Buffer.
 // 3. Processor : Updates the Price Book, calculates latency, and pushes metrics.
-// 4. Logger: Prints real-time statistics (Drop rates, throughput) to the console
+// 4. Logger: Prints real-time statistics to the console
 
 #include <iostream>
 #include <thread>
@@ -76,7 +76,7 @@ int main() {
     // Thread 3: Processor
     // ==========================================
 
-    std::thread processor_thread([&]() {
+    std::thread processor_thread([ring_buffer, price_book, nic_buffer, &simulator, &consumer]() {
         std::cout << "[Thread: Brain] Processing started." << std::endl;
         InternalTick tick;
 
@@ -107,23 +107,36 @@ int main() {
     // Thread 4: Logger
     // ==========================================
 
-    std::thread logger_thread([&]() {
+    std::thread logger_thread([nic_buffer, ring_buffer, price_book, &simulator, &consumer]() {
         while (keep_running) {
-            std::cout << "\n=== C++ Engine Status ===" << std::endl;
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+            // std::cout << "\n=== C++ Engine Status ===" << std::endl;
 
-            std::cout << "[Buffers]" << std::endl;
-            std::cout << "  NIC Buffer:  " << (nic_buffer->size() * 100 / 50) << std::endl;
-            std::cout << "  Ring Buffer: " << (ring_buffer->size() * 100 / 1024) << std::endl;
+            // std::cout << "[Buffers]" << std::endl;
+            // std::cout << "  NIC Buffer:  " << (nic_buffer->size() * 100 / 50) << "%" << std::endl;
+            // std::cout << "  Ring Buffer: " << (ring_buffer->size() * 100 / 1024) << "%" << std::endl;
 
-            std::cout << "[Packet Flow]" << std::endl;
-            std::cout << "  Network In:  " << simulator.get_packets_generated() << " packets" << std::endl;
-            std::cout << "  Ingress Out: " << consumer.get_packets_consumed() << " packets" << std::endl;
-            uint64_t lost = simulator.get_packets_generated() - consumer.get_packets_consumed();
-            std::cout << "  Lost:        " << lost << " packets" << std::endl;
+            // std::cout << "[Packet Flow]" << std::endl;
+            // std::cout << "  Network In:  " << simulator.get_packets_generated() << " packets" << std::endl;
+            // std::cout << "  Ingress Out: " << consumer.get_packets_consumed() << " packets" << std::endl;
+            // uint64_t lost = simulator.get_packets_generated() - consumer.get_packets_consumed();
+            // std::cout << "  Lost:        " << lost << " packets" << std::endl;
 
-            std::cout << "[Buffer Overflows]" << std::endl;
-            std::cout << "  NIC Drops:   " << simulator.get_nic_drops() << std::endl;
-            std::cout << "  Ring Drops:  " << consumer.get_ring_drops() << std::endl;
+            // std::cout << "[Buffer Overflows]" << std::endl;
+            // std::cout << "  NIC Drops:   " << simulator.get_nic_drops() << std::endl;
+            // std::cout << "  Ring Drops:  " << consumer.get_ring_drops() << std::endl;
+
+            std::cout << "[Price Book]" << std::endl;
+            for (uint32_t id = 1; id <= 2; ++id) {
+                auto state = price_book->get_symbol_state(id);
+                const char* symbol = (id == 1) ? "BTC/USD" : "ETH/USD";
+                const char* exchanges[] = {"", "Binance", "Kraken", "Coinbase"};
+                std::cout << "  " << symbol << ": "
+                          << "Bid=$" << (state.best_bid_price / 1000000000.0) << " (" << exchanges[state.best_bid_exchange] << ") "
+                          << "Ask=$" << (state.best_ask_price / 1000000000.0) << " (" << exchanges[state.best_ask_exchange] << ") "
+                          << "Mid=$" << (state.last_mid_price / 1000000000.0)
+                          << " Spread=$" << (state.spread / 1000000000.0) << std::endl;
+            }
         }
     });
 

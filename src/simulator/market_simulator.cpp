@@ -59,7 +59,7 @@ void MarketSimulator::run() {
 
         if (burst_chance(rng_) < 0.05) {
             int count = burst_size(rng_);
-            std::cout << "🔥 Simulator: Burst of " << count << " packets" << std::endl;
+            std::cout << "Simulator: Burst of " << count << " packets" << std::endl;
 
             for (int i = 0; i < count && running_ && keep_running; ++i) {
 
@@ -112,8 +112,8 @@ std::string MarketSimulator::generate_tick(const std::string& symbol_key) {
     // ------------------------------------------
     double base_price = (symbol_key == "BITCOIN") ? 95000.0 : 2800.0;
 
-    std::uniform_real_distribution<> price_jitter(-5.0, 5.0);
-    std::uniform_real_distribution<> spread_range(0.1, 0.5);
+    std::uniform_real_distribution<> price_jitter(-1.0, 1.0);
+    std::uniform_real_distribution<> spread_range(0.1, 3);
     std::uniform_real_distribution<> volume_range(0.001, 2.5);
 
     double mid = base_price + price_jitter(rng_);
