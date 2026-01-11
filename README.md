@@ -5,9 +5,8 @@ A low-latency C++ engine that aggregates cryptocurrency prices from multiple exc
 ## Architecture
 
 ```
-Exchange Simulator → NIC Buffer → Ring Buffer → Price Book → Prometheus
-                                                              ↓
-                                                           Grafana
+Exchange Simulator → NIC Buffer → Ring Buffer → Price Book → Prometheus → Grafana
+                                                                                                                     
 ```
 
 **4 Threads:**
