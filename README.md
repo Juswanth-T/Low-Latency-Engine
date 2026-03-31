@@ -117,25 +117,23 @@ The `bench/` directory contains a standalone benchmark that measures the SPSC ri
 
 ### What it measures
 
-| Benchmark | What it does |
-|-----------|-------------|
-| **Throughput** | Producer + consumer on separate threads, 10M ticks, spin on full/empty |
-| **Round-trip latency** | Ping-pong between two threads: push → responder pop → push response → main pop. Reports avg / p50 / p99 / p99.9 |
-| **Burst absorption** | Pre-fills 500 ticks (simulator max burst) then drains single-threaded, measures total time and ns/tick |
+| Benchmark             | What it does                                                                                                          |
+|-----------------------|-----------------------------------------------------------------------------------------------------------------------|
+| **Throughput**        | Producer + consumer on separate threads, 10M ticks, spin on full/empty                                               |
+| **Round-trip latency**| Ping-pong between two threads: push → responder pop → push response → main pop. Reports avg / p50 / p99 / p99.9      |
+| **Burst absorption**  | Pre-fills 500 ticks (simulator max burst) then drains single-threaded, measures total time and ns/tick                |
 
-### Results (measured on this machine, Windows 11, MSYS2 UCRT64, g++ 15.2.0 -O3)
+### Results
 
-```
-=== RapidFeed SPSC Ring Buffer Benchmark ===
-InternalTick size: 64 bytes  (cache-line aligned: 64 bytes)
+**Environment:** Windows 11, MSYS2 UCRT64, g++ 15.2.0 -O3, `InternalTick` = 64 bytes (cache-line aligned)
 
-[Throughput] 10M ticks  |  1004.50 ms  |  9.96 M ticks/sec
-[Latency]    200K samples  |  avg=454ns  p50=400ns  p99=700ns  p99.9=3000ns
-[Burst]      500 ticks (single-threaded drain)  |  2900 ns total  |  5.80 ns/tick
+| Benchmark      | Result                                                              |
+|----------------|---------------------------------------------------------------------|
+| **Throughput** | 10M ticks in 1004.50 ms → **9.96 M ticks/sec**                     |
+| **Latency**    | avg=454ns · p50=400ns · p99=700ns · p99.9=3000ns (200K samples)    |
+| **Burst**      | 500 ticks drained in 2900 ns → **5.80 ns/tick** (single-threaded)  |
 
-Note: latency figures include clock::now() overhead (~20-40ns).
-      Subtract that for pure ring-buffer push/pop time.
-```
+> Latency figures include two `clock::now()` calls (~20–40ns each). Subtract ~40–80ns for pure ring-buffer round-trip time.
 
 > **p99.9 (3µs):** Windows OS thread scheduling jitter — not a ring buffer issue. On Linux with CPU-pinned threads this drops to ~1µs.
 
