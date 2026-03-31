@@ -59,3 +59,16 @@ target_include_directories(rapid_core PUBLIC include)
 # --- 7. The Main Executable ---
 add_executable(RapidFeed src/main.cpp)
 target_link_libraries(RapidFeed PUBLIC rapid_core)
+
+# --- 8. Ring Buffer Benchmark (no prometheus dependency) ---
+add_executable(ring_buffer_bench
+    bench/ring_buffer_bench.cpp
+    src/core/ring_buffer.cpp
+)
+target_include_directories(ring_buffer_bench PRIVATE include)
+if(WIN32)
+    target_link_libraries(ring_buffer_bench PRIVATE ws2_32)
+endif()
+set_target_properties(ring_buffer_bench PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bench"
+)

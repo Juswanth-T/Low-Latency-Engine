@@ -65,6 +65,16 @@ size_t RingBuffer<T>::size() const {
 }
 
 // ==========================================
+// Empty
+// ==========================================
+
+template <typename T>
+bool RingBuffer<T>::empty() const {
+    return head_.load(std::memory_order_acquire) ==
+           tail_.load(std::memory_order_acquire);
+}
+
+// ==========================================
 // Template Instantiations
 // ==========================================
 
