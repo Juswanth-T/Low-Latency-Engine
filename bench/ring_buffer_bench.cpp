@@ -211,6 +211,41 @@ static void bench_burst(size_t burst_size, size_t ring_capacity) {
 }
 
 // ---------------------------------------------------------------------------
+// Benchmark 4 – Single-threaded raw push speed
+//   Symmetric counterpart to bench_burst (which times pop).
+//   Warm-up pass first: push+drain 500 ticks so head_/tail_/buffer_ cache
+//   lines are hot in L1. Then time pushing 500 ticks into the empty ring.
+//   Single thread only — no cross-core MESI traffic, no consumer competing.
+//   Reports ns/tick for push() in isolation.
+// ---------------------------------------------------------------------------
+static void bench_push(size_t burst_size, size_t ring_capacity) {
+    RingBuffer<InternalTick> rb(ring_capacity);
+    InternalTick tx = make_tick(0);
+    InternalTick rx{};
+
+    // Warm up: push then drain so all cache lines are hot before timing
+    for (size_t i = 0; i < burst_size; ++i) {
+        tx.sequence_num = static_cast<uint32_t>(i);
+        rb.push(tx);
+    }
+    while (rb.pop(rx)) {}  // drain — ring is now empty, cache lines hot
+
+    // Timed push: single thread fills the ring
+    auto t0 = Clock::now();
+    size_t pushed = 0;
+    for (; pushed < burst_size; ++pushed) {
+        tx.sequence_num = static_cast<uint32_t>(pushed);
+        if (!rb.push(tx)) break;  // stop if full (shouldn't happen with 1024 cap)
+    }
+    auto elapsed_ns = std::chrono::duration_cast<ns_t>(Clock::now() - t0).count();
+
+    std::cout << "[Push]       "
+              << pushed << " ticks (single-threaded fill)   |  "
+              << elapsed_ns << " ns total  |  "
+              << elapsed_ns / static_cast<double>(pushed) << " ns/tick\n";
+}
+
+// ---------------------------------------------------------------------------
 int main() {
     std::cout << "=== RapidFeed SPSC Ring Buffer Benchmark ===\n";
     std::cout << "InternalTick size: " << sizeof(InternalTick) << " bytes"
@@ -222,8 +257,11 @@ int main() {
     // Latency: 200K round-trips
     bench_latency(200'000);
 
-    // Burst: 500 ticks (simulator max burst) into 1024-element ring
+    // Raw pop speed: 500 ticks pre-filled, single-threaded drain
     bench_burst(500, 1024);
+
+    // Raw push speed: warm cache, single-threaded fill of empty ring
+    bench_push(500, 1024);
 
     std::cout << "\nNote: latency figures include clock::now() overhead (~20-40ns).\n";
     std::cout << "      Subtract that for pure ring-buffer push/pop time.\n";
